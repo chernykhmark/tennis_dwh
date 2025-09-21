@@ -36,7 +36,7 @@ stg.mongo_matches - данные о фактах из источника
 stg.mongo_players - данные об игроках из источника
 stg.mongo_tours - данные об турнирах из источника
 
-[STG](scripts/ddl/STG)
+
 
 #### DDS
 
@@ -48,8 +48,6 @@ stg.mongo_tours - данные об турнирах из источника
 
 Индексы:
 Индексы для внешних ключей таблиц фактов, а также для рейтинга (SCD2)
-
-[DDS_dm_fct_tables_create.sql](scripts/ddl/3_DDS_dm_fct_tables_create.sql)
 
 
 #### CDM
@@ -81,14 +79,45 @@ stg.mongo_tours - данные об турнирах из источника
 
 ### Составить скрипты подключения в базе и источникам
 
+[pg_connect.py](scripts/lib/pg_connect.py)
+[mongo_connect.py](scripts/lib/mongo_connect.py)
+
+### Составить DDL скрипты для создания таблиц по слоям
+
+**Создание схемы и сервисных таблиц**
+[init_schema.py](scripts/lib/init_schema.py)
+
+**Создание STG слоя** 
+[STG](scripts/ddl/STG)
+
+**Создание DDS слоя** 
+[DDS_dm_fct_tables_create.sql](scripts/ddl/3_DDS_dm_fct_tables_create.sql)
+
+**Генерируйте и наполняйте эту таблицу скриптом заранее на много лет вперед.** 
+[4_dm_date_insert_data.sql](scripts/ddl/4_dm_date_insert_data.sql)
 
 
 
+### Составить ETL скрипты для источников
+21.09.25
+
+Скрипт загрузки данных из Монго в postgres в слой STG с добавлением позиции курсора в системную таблицу
+[mongo_origin_stg_loader.py](scripts/mongo_origin_stg_loader.py)
 
 
-3. Составить DDL скрипты для создания таблиц по слоям
-Генерируйте и наполняйте эту таблицу скриптом заранее на много лет вперед. Это стандартная практика.
-4. Составить ETL скрипты для источников
 5. Составить DML скрипты для распределения по слоям
+
+
+
 6. Провести тестирование
 7. Развернуть на DBaaS
+
+
+## Последовательность запуска 
+
+1. инициализация DDL скриптов
+[init_schema.py](scripts/lib/init_schema.py)
+
+2. Создание первой записи в системной таблице и выгрузка всех данных о завершенных матчах 
+[mongo_origin_stg_loader.py](scripts/mongo_origin_stg_loader.py)
+

@@ -1,7 +1,7 @@
 -- DDL для слоя DDS
 
 -- Дата
-CREATE TABLE dm_date (
+CREATE TABLE dds.dm_date (
     id SERIAL PRIMARY KEY,
     date DATE NOT NULL UNIQUE,
     day INTEGER NOT NULL,
@@ -9,19 +9,35 @@ CREATE TABLE dm_date (
     year INTEGER NOT NULL,
     week INTEGER NOT NULL
 );
-COMMENT ON TABLE dm_date IS 'Измерение Дата';
+COMMENT ON TABLE dds.dm_date IS 'Измерение Дата';
+
+-- Заполенние датами на будущее
+INSERT INTO dds.dm_date (date, day, month, year)
+SELECT
+    datum AS date,
+    EXTRACT(DAY FROM datum) AS day,
+    EXTRACT(MONTH FROM datum) AS month,
+    EXTRACT(YEAR FROM datum) AS year,
+    EXTRACT(WEEK FROM datum) AS week
+FROM (
+    SELECT '2020-01-01'::DATE + SEQUENCE.DAY AS datum
+    FROM GENERATE_SERIES(0, 7300) AS SEQUENCE(DAY)
+) AS dates
+WHERE datum <= '2040-12-31'
+ORDER BY datum;
+
 
 -- Турнир
-CREATE TABLE dm_tour (
+CREATE TABLE dds.dm_tour (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL UNIQUE,
     category VARCHAR(100),
     location VARCHAR(100)
 );
-COMMENT ON TABLE dm_tour IS 'Измерение Турнир';
+COMMENT ON TABLE dds.dm_tour IS 'Измерение Турнир';
 
 -- 3. Измерение Игрок
-CREATE TABLE dm_player (
+CREATE TABLE dds.dm_player (
     id SERIAL PRIMARY KEY,
     player_id VARCHAR(100) NOT NULL UNIQUE,
     firstname VARCHAR(100) NOT NULL,
@@ -32,10 +48,10 @@ CREATE TABLE dm_player (
     weight_kg INTEGER CHECK (weight_kg > 0),
     plays VARCHAR(20) CHECK (plays IN ('left', 'right'))
 );
-COMMENT ON TABLE dm_player IS 'Измерение Игрок';
+COMMENT ON TABLE dds.dm_player IS 'Измерение Игрок';
 
 -- Рейтинг
-CREATE TABLE dm_player_rank (
+CREATE TABLE dds.dm_player_rank (
     id SERIAL PRIMARY KEY,
     player_id INTEGER NOT NULL REFERENCES dm_player(id) ON DELETE CASCADE,
     rank INTEGER,
@@ -44,10 +60,10 @@ CREATE TABLE dm_player_rank (
     active_to DATE, -- NULL означает текущую версию
     CONSTRAINT valid_dates CHECK (active_to IS NULL OR active_to > active_from)
 );
-COMMENT ON TABLE dm_player_rank IS 'Рейтинг игроков (SCD2)';
+COMMENT ON TABLE dds.dm_player_rank IS 'Рейтинг игроков (SCD2)';
 
 -- ФАКТ: Результаты матча (до/после)
-CREATE TABLE fct_match_result (
+CREATE TABLE dds.fct_match_result (
     id SERIAL PRIMARY KEY,
     match_id VARCHAR(50) NOT NULL UNIQUE,
     player1_id INTEGER NOT NULL REFERENCES dm_player(id),
@@ -65,10 +81,10 @@ CREATE TABLE fct_match_result (
     p2_tb_in_last_5_wins INTEGER,
     p2_h2h_wins INTEGER
 );
-COMMENT ON TABLE fct_match_result IS 'Факты матча: результат и контекст';
+COMMENT ON TABLE dds.fct_match_result IS 'Факты матча: результат и контекст';
 
 -- ФАКТ: Статистика игроков в матче
-CREATE TABLE fct_match_performance (
+CREATE TABLE dds.fct_match_performance (
     id SERIAL PRIMARY KEY,
     match_id INTEGER NOT NULL REFERENCES fct_match_result(id) ON DELETE CASCADE,
     player_id INTEGER NOT NULL REFERENCES dm_player(id),
@@ -104,24 +120,24 @@ CREATE TABLE fct_match_performance (
     total_games_won INTEGER,
     total_games_total INTEGER
 );
-COMMENT ON TABLE fct_match_performance IS 'Детальная статистика игрока в матче';
+COMMENT ON TABLE dds.fct_match_performance IS 'Детальная статистика игрока в матче';
 
 -- fct_match_result
-CREATE INDEX ON fct_match_result (player1_id);
-CREATE INDEX ON fct_match_result (player2_id);
-CREATE INDEX ON fct_match_result (tour_id);
-CREATE INDEX ON fct_match_result (date_id);
-CREATE INDEX ON fct_match_result (winner_id);
+CREATE INDEX ON dds.fct_match_result (player1_id);
+CREATE INDEX ON dds.fct_match_result (player2_id);
+CREATE INDEX ON dds.fct_match_result (tour_id);
+CREATE INDEX ON dds.fct_match_result (date_id);
+CREATE INDEX ON dds.fct_match_result (winner_id);
 
 -- Для fct_match_performance
-CREATE INDEX ON fct_match_performance (match_id);
-CREATE INDEX ON fct_match_performance (player_id);
+CREATE INDEX ON dds.fct_match_performance (match_id);
+CREATE INDEX ON dds.fct_match_performance (player_id);
 -- Составной индекс для анализа игрока в матче
-CREATE INDEX ON fct_match_performance (match_id, player_id);
+CREATE INDEX ON dds.fct_match_performance (match_id, player_id);
 
 -- dm_player_rank
-CREATE INDEX ON dm_player_rank (player_id);
-CREATE INDEX ON dm_player_rank (active_from);
-CREATE INDEX ON dm_player_rank (active_to);
+CREATE INDEX ON dds.dm_player_rank (player_id);
+CREATE INDEX ON dds.dm_player_rank (active_from);
+CREATE INDEX ON dds.dm_player_rank (active_to);
 -- Составной индекс для быстрого поиска актуального рейтинга
-CREATE INDEX ON dm_player_rank (player_id, active_to);
+CREATE INDEX ON dds.dm_player_rank (player_id, active_to);
