@@ -12,7 +12,7 @@ CREATE TABLE dds.dm_date (
 COMMENT ON TABLE dds.dm_date IS 'Измерение Дата';
 
 -- Заполенние датами на будущее
-INSERT INTO dds.dm_date (date, day, month, year)
+INSERT INTO dds.dm_date (date, day, month, year,week)
 SELECT
     datum AS date,
     EXTRACT(DAY FROM datum) AS day,
