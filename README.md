@@ -36,7 +36,9 @@ stg.mongo_matches - данные о фактах из источника
 stg.mongo_players - данные об игроках из источника
 stg.mongo_tours - данные об турнирах из источника
 
+#### ODS
 
+ods.fct_matches - широкая таблица фактов
 
 #### DDS
 
@@ -90,26 +92,27 @@ stg.mongo_tours - данные об турнирах из источника
 **Создание STG слоя** 
 [STG](scripts/ddl/STG)
 
+**Создание ODS слоя** 
+[2_ODS_large_trans_tables.sql](scripts/ddl/2_ODS_large_trans_tables.sql)[2_ODS_large_trans_tables.sql](scripts/ddl/2_ODS_large_trans_tables.sql)
+
 **Создание DDS слоя** 
 [DDS_dm_fct_tables_create.sql](scripts/ddl/3_DDS_dm_fct_tables_create.sql)
 
-**Генерируйте и наполняйте эту таблицу скриптом заранее на много лет вперед.** 
-[4_dm_date_insert_data.sql](scripts/ddl/4_dm_date_insert_data.sql)
-
-
 
 ### Составить ETL скрипты для источников
-21.09.25
 
 Скрипт загрузки данных из Монго в postgres в слой STG с добавлением позиции курсора в системную таблицу
 [mongo_origin_stg_loader.py](scripts/mongo_origin_stg_loader.py)
 
 
-5. Составить DML скрипты для распределения по слоям
+### Составить DML скрипты для распределения по слоям
 
-
+Скрипт загрузки и преобразования данных из слоя STG в ODS
+[stg_ods_loader.py](scripts/stg_ods_loader.py)
+c применением скрипта парсинга [ods_safe_extract.py](scripts/parser/ods_safe_extract.py)
 
 6. Провести тестирование
+
 7. Развернуть на DBaaS
 
 
@@ -118,6 +121,8 @@ stg.mongo_tours - данные об турнирах из источника
 1. инициализация DDL скриптов
 [init_schema.py](scripts/lib/init_schema.py)
 
-2. Создание первой записи в системной таблице и выгрузка всех данных о завершенных матчах 
+2. Создание первой записи в системной таблице STG и выгрузка всех данных о завершенных матчах 
 [mongo_origin_stg_loader.py](scripts/mongo_origin_stg_loader.py)
 
+3. Создание первой записи в системной таблице ODS и парсинг разбор всех матчей в широкую таблицу
+[stg_ods_loader.py](scripts/stg_ods_loader.py)

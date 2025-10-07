@@ -1,7 +1,7 @@
 -- DDL для слоя DDS
 
 -- Дата
-CREATE TABLE dds.dm_date (
+CREATE TABLE IF NOT EXISTS dds.dm_date (
     id SERIAL PRIMARY KEY,
     date DATE NOT NULL UNIQUE,
     day INTEGER NOT NULL,
@@ -11,35 +11,37 @@ CREATE TABLE dds.dm_date (
 );
 COMMENT ON TABLE dds.dm_date IS 'Измерение Дата';
 
--- Заполенние датами на будущее
-INSERT INTO dds.dm_date (date, day, month, year,week)
-SELECT
-    datum AS date,
-    EXTRACT(DAY FROM datum) AS day,
-    EXTRACT(MONTH FROM datum) AS month,
-    EXTRACT(YEAR FROM datum) AS year,
-    EXTRACT(WEEK FROM datum) AS week
-FROM (
-    SELECT '2020-01-01'::DATE + SEQUENCE.DAY AS datum
-    FROM GENERATE_SERIES(0, 7300) AS SEQUENCE(DAY)
-) AS dates
-WHERE datum <= '2040-12-31'
-ORDER BY datum;
+---- Заполенние датами на будущее
+--INSERT INTO dds.dm_date (date, day, month, year,week)
+--SELECT
+--    datum AS date,
+--    EXTRACT(DAY FROM datum) AS day,
+--    EXTRACT(MONTH FROM datum) AS month,
+--    EXTRACT(YEAR FROM datum) AS year,
+--    EXTRACT(WEEK FROM datum) AS week
+--FROM (
+--    SELECT '2020-01-01'::DATE + SEQUENCE.DAY AS datum
+--    FROM GENERATE_SERIES(0, 7300) AS SEQUENCE(DAY)
+--) AS dates
+--WHERE datum <= '2040-12-31'
+--ORDER BY datum;
 
 
 -- Турнир
-CREATE TABLE dds.dm_tour (
+CREATE TABLE IF NOT EXISTS dds.dm_tour (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL UNIQUE,
     category VARCHAR(100),
+    round VARCHAR(100),
+    surface VARCHAR(10),
     location VARCHAR(100)
 );
 COMMENT ON TABLE dds.dm_tour IS 'Измерение Турнир';
 
 -- 3. Измерение Игрок
-CREATE TABLE dds.dm_player (
+CREATE TABLE IF NOT EXISTS dds.dm_player (
     id SERIAL PRIMARY KEY,
-    player_id VARCHAR(100) NOT NULL UNIQUE,
+    player_uuid VARCHAR(100) NOT NULL UNIQUE,
     firstname VARCHAR(100) NOT NULL,
     lastname VARCHAR(100) NOT NULL,
     country CHAR(3), -- стандартные коды стран
@@ -51,7 +53,7 @@ CREATE TABLE dds.dm_player (
 COMMENT ON TABLE dds.dm_player IS 'Измерение Игрок';
 
 -- Рейтинг
-CREATE TABLE dds.dm_player_rank (
+CREATE TABLE IF NOT EXISTS dds.dm_player_rank (
     id SERIAL PRIMARY KEY,
     player_id INTEGER NOT NULL REFERENCES dm_player(id) ON DELETE CASCADE,
     rank INTEGER,
@@ -63,7 +65,7 @@ CREATE TABLE dds.dm_player_rank (
 COMMENT ON TABLE dds.dm_player_rank IS 'Рейтинг игроков (SCD2)';
 
 -- ФАКТ: Результаты матча (до/после)
-CREATE TABLE dds.fct_match_result (
+CREATE TABLE IF NOT EXISTS dds.fct_match_result (
     id SERIAL PRIMARY KEY,
     match_id VARCHAR(50) NOT NULL UNIQUE,
     player1_id INTEGER NOT NULL REFERENCES dm_player(id),
@@ -84,7 +86,7 @@ CREATE TABLE dds.fct_match_result (
 COMMENT ON TABLE dds.fct_match_result IS 'Факты матча: результат и контекст';
 
 -- ФАКТ: Статистика игроков в матче
-CREATE TABLE dds.fct_match_performance (
+CREATE TABLE IF NOT EXISTS dds.fct_match_performance (
     id SERIAL PRIMARY KEY,
     match_id INTEGER NOT NULL REFERENCES fct_match_result(id) ON DELETE CASCADE,
     player_id INTEGER NOT NULL REFERENCES dm_player(id),
@@ -141,3 +143,6 @@ CREATE INDEX ON dds.dm_player_rank (active_from);
 CREATE INDEX ON dds.dm_player_rank (active_to);
 -- Составной индекс для быстрого поиска актуального рейтинга
 CREATE INDEX ON dds.dm_player_rank (player_id, active_to);
+
+
+
